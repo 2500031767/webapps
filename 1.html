@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Household Data Cleaner</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,sans-serif;background:#f5f5f3;color:#1a1a1a;min-height:100vh}
+  .container{max-width:960px;margin:0 auto;padding:2rem 1.5rem}
+  h1{font-size:22px;font-weight:500;margin-bottom:1.5rem;display:flex;align-items:center;gap:10px}
+  h1 i{font-size:26px;color:#185FA5}
+
+  .upload-zone{border:1.5px dashed #c0bdb4;border-radius:12px;padding:3rem;text-align:center;cursor:pointer;transition:background 0.2s;background:#fff}
+  .upload-zone:hover{background:#f0ede8}
+  .upload-zone i{font-size:40px;color:#888;display:block;margin-bottom:1rem}
+  .upload-zone strong{font-size:16px;display:block;margin-bottom:6px}
+  .upload-zone p{color:#666;font-size:14px}
+  .sample-link{color:#185FA5;cursor:pointer;text-decoration:underline;font-size:13px}
+
+  .tab-row{display:flex;border-bottom:1px solid #e0ddd6;margin-bottom:1.25rem;background:#fff;border-radius:10px 10px 0 0;padding:0 1rem}
+  .tab{padding:10px 18px;font-size:13px;cursor:pointer;color:#666;border-bottom:2px solid transparent;transition:color 0.15s}
+  .tab.active{color:#185FA5;border-bottom:2px solid #185FA5;font-weight:500}
+  .tab:hover:not(.active){color:#1a1a1a}
+
+  .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.25rem}
+  .stat-card{background:#fff;border-radius:10px;padding:1rem 1.25rem;border:0.5px solid #e0ddd6}
+  .stat-card .val{font-size:24px;font-weight:500}
+  .stat-card .lbl{font-size:12px;color:#666;margin-top:3px}
+
+  .section-title{font-size:12px;font-weight:500;color:#888;text-transform:uppercase;letter-spacing:0.06em;margin:1rem 0 0.6rem}
+
+  .issues-box{background:#fff;border:0.5px solid #e0ddd6;border-radius:10px;overflow:hidden}
+  .issue-row{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:0.5px solid #e0ddd6;font-size:13px}
+  .issue-row:last-child{border-bottom:none}
+  .issue-row i{font-size:18px;flex-shrink:0}
+  .badge{font-size:11px;padding:2px 9px;border-radius:20px;font-weight:500;flex-shrink:0}
+  .badge-warn{background:#faeeda;color:#854f0b}
+  .badge-err{background:#fcebeb;color:#a32d2d}
+  .fix-btn{font-size:11px;padding:3px 10px;border-radius:20px;border:0.5px solid #c0bdb4;background:#fff;cursor:pointer;color:#444;white-space:nowrap}
+  .fix-btn:hover{background:#f5f5f3}
+
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem;align-items:center}
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border:0.5px solid #c0bdb4;border-radius:8px;background:#fff;color:#1a1a1a;font-size:13px;cursor:pointer;font-family:inherit}
+  .btn:hover{background:#f5f5f3}
+  .btn-primary{background:#185FA5;border-color:#185FA5;color:#fff}
+  .btn-primary:hover{background:#0C447C;border-color:#0C447C}
+  .btn-danger{border-color:#f09595;color:#a32d2d}
+  .btn-danger:hover{background:#fcebeb}
+
+  .table-wrap{background:#fff;border:0.5px solid #e0ddd6;border-radius:10px;overflow:auto;max-height:380px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{background:#f5f5f3;padding:9px 13px;text-align:left;font-weight:500;font-size:12px;color:#666;border-bottom:0.5px solid #e0ddd6;position:sticky;top:0;white-space:nowrap;z-index:1}
+  td{padding:7px 13px;border-bottom:0.5px solid #eee;color:#1a1a1a;white-space:nowrap}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:#fafaf8}
+  td input[type="text"]{background:transparent;border:none;outline:none;font-size:13px;color:#1a1a1a;width:100%;font-family:inherit;min-width:80px}
+  td input[type="text"]:focus{background:#e6f1fb;border-radius:4px;padding:1px 5px}
+  .row-warn td{background:#faeeda22}
+  .row-err td{background:#fcebeb22}
+
+  .card{background:#fff;border:0.5px solid #e0ddd6;border-radius:10px;padding:1.25rem}
+
+  select{font-size:13px;padding:7px 10px;border:0.5px solid #c0bdb4;border-radius:8px;background:#fff;color:#1a1a1a;font-family:inherit;width:100%;cursor:pointer}
+  input[type="range"]{width:100%;margin:6px 0}
+  input[type="checkbox"]{cursor:pointer;width:14px;height:14px}
+
+  .preview-wrap{margin-top:1rem;border:0.5px solid #e0ddd6;border-radius:10px;overflow:auto;max-height:520px;padding:10px;background:#f5f5f3}
+  #preview-canvas{display:block;max-width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,0.10)}
+
+  .hidden{display:none!important}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+  @media(max-width:600px){
+    .stats-row{grid-template-columns:1fr 1fr}
+    .grid2{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1><i class="ti ti-database-edit"></i> Household Data Cleaner</h1>
+
+  <!-- Upload -->
+  <div id="upload-section">
+    <div class="upload-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+      <i class="ti ti-file-upload"></i>
+      <strong>Drop your JSON file here</strong>
+      <p>or click to browse &mdash; supports JSON with household + members structure</p>
+    </div>
+    <input type="file" id="file-input" accept=".json" style="display:none">
+    <p style="text-align:center;margin-top:10px;font-size:13px;color:#666">
+      No file? <span class="sample-link" onclick="loadSample()">Load sample data</span>
+    </p>
+  </div>
+
+  <!-- Main App -->
+  <div id="main-section" class="hidden">
+    <div style="background:#fff;border:0.5px solid #e0ddd6;border-radius:10px;margin-bottom:1rem">
+      <div class="tab-row">
+        <div class="tab active" onclick="switchTab('issues')">Issues &amp; Fixes</div>
+        <div class="tab" onclick="switchTab('household')">Household</div>
+        <div class="tab" onclick="switchTab('members')">Members</div>
+        <div class="tab" onclick="switchTab('export')">Export</div>
+      </div>
+      <div style="padding:1.25rem">
+
+        <!-- Issues Tab -->
+        <div id="tab-issues">
+          <div class="stats-row" id="stats-row"></div>
+          <div class="section-title">Detected issues</div>
+          <div class="issues-box" id="issues-list"></div>
+          <div class="toolbar" style="margin-top:1rem">
+            <button class="btn btn-primary" onclick="fixAll()"><i class="ti ti-wand"></i> Fix all automatically</button>
+            <button class="btn" onclick="loadNew()"><i class="ti ti-upload"></i> Load new file</button>
+          </div>
+        </div>
+
+        <!-- Household Tab -->
+        <div id="tab-household" class="hidden">
+          <div class="toolbar">
+            <button class="btn btn-primary" onclick="saveAndRefresh()"><i class="ti ti-check"></i> Save changes</button>
+            <button class="btn" onclick="resetHousehold()"><i class="ti ti-refresh"></i> Reset to original</button>
+          </div>
+          <div class="table-wrap"><table id="household-table"></table></div>
+        </div>
+
+        <!-- Members Tab -->
+        <div id="tab-members" class="hidden">
+          <div class="toolbar">
+            <button class="btn btn-primary" onclick="saveAndRefresh()"><i class="ti ti-check"></i> Save changes</button>
+            <button class="btn btn-danger" onclick="deleteSelected()"><i class="ti ti-trash"></i> Delete selected</button>
+          </div>
+          <div class="table-wrap"><table id="members-table"></table></div>
+        </div>
+
+        <!-- Export Tab -->
+        <div id="tab-export" class="hidden">
+          <div class="grid2" style="margin-bottom:1.25rem">
+            <div class="card">
+              <p style="font-size:13px;font-weight:500;margin-bottom:12px">Image options</p>
+              <label style="font-size:12px;color:#666">Font size <span id="fs-label">12</span>px</label>
+              <input type="range" min="10" max="16" value="12" id="font-size-range" oninput="document.getElementById('fs-label').textContent=this.value">
+              <label style="font-size:12px;color:#666;display:block;margin-top:10px;margin-bottom:4px">Color theme</label>
+              <select id="theme-select">
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+                <option value="blue">Blue</option>
+                <option value="green">Green</option>
+              </select>
+            </div>
+            <div class="card">
+              <p style="font-size:13px;font-weight:500;margin-bottom:12px">Include sections</p>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:10px;cursor:pointer"><input type="checkbox" id="inc-summary" checked> Summary stats</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:10px;cursor:pointer"><input type="checkbox" id="inc-household" checked> Household info</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:10px;cursor:pointer"><input type="checkbox" id="inc-members" checked> Family members</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="inc-remarks" checked> Remarks</label>
+            </div>
+          </div>
+          <div class="toolbar">
+            <button class="btn btn-primary" onclick="exportImage()"><i class="ti ti-download"></i> Download PNG</button>
+            <button class="btn" onclick="exportJSON()"><i class="ti ti-file-code"></i> Download cleaned JSON</button>
+            <button class="btn" onclick="previewImage()"><i class="ti ti-eye"></i> Preview image</button>
+          </div>
+          <div id="preview-container" class="hidden">
+            <div class="section-title">Preview</div>
+            <div class="preview-wrap">
+              <canvas id="preview-canvas"></canvas>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── State ───────────────────────────────────────────────────────────────────
+let data = null, originalData = null, issues = [];
+
+// ─── Sample Data ─────────────────────────────────────────────────────────────
+const SAMPLE = {"household":{"id":1,"headName":"Ajimira Tirupathi rao","mobileNumber":"9652459967","familyMembersCount":5,"houseOwnership":"Government Allocated House","houseType":"Pucca (Concrete/cement house)","toiletFacility":"Private","electricityConnection":"Yes","electricityAvailabilityHours":"24","solarPanelsAvailable":"No","vehicleCycle":2,"vehiclePetrol2Wheeler":1,"appliancesListText":"Fridge, TV","mobileNetwork":"Airtel","dthProvider":"Sun Direct","drinkingWaterAvailability":"Mineral Water (Buying)","waterSource":"Government Pipe Water","drainageFacility":"No","povertyStatus":"BPL (Income ₹1 Lakh or Less)","mainIncomeSource":"private job","annualIncome":"85000","landOwnership":"Agricultural Land","landAreaOwned":"1.0","agriculturalInputsText":"Chemical Fertilizers","irrigationSystem":"Canal","agriculturalProduce":"paddy, cotton","livestockDetails":"No","cookingFuel":"LPG","memberMigrate":"No","governmentSchemesText":"MNREGA","remarks":"whole school have only two teachers for all students so , that's ways all students will going other villages to studies","surveyDate":1780640800453,"surveyorName":"M.Naveen Kumar"},"members":[{"id":259,"householdId":1,"name":"Azmira Tirupathi Rao","relation":"Self / Head","age":"38","gender":"Male","education":"Graduate","category":"ST","occupation":"computer operater","bankAccountStatus":"Private Account","bankName":"State Bank of India (SBI)","aadhaarNumber":"783885327811","healthProblems":"No","underTreatment":"No","mnregaJobCard":"Yes","contactNumber":"9652459967"},{"id":260,"householdId":1,"name":"Azmira Bikshali","relation":"Spouse","age":"31","gender":"Female","education":"12th Pass","category":"ST","occupation":"House wife","bankAccountStatus":"Private Account","bankName":"State Bank of India (SBI)","aadhaarNumber":"639321874678","healthProblems":"No","underTreatment":"No","mnregaJobCard":"Yes","contactNumber":"9652459967"},{"id":261,"householdId":1,"name":"azmira Lohith Nayak","relation":"Son","age":"11","gender":"Male","education":"Illiterate","category":"ST","occupation":"Student","bankAccountStatus":"No Bank Account","aadhaarNumber":"935678711157","healthProblems":"No","underTreatment":"No","mnregaJobCard":"No","contactNumber":"9652459967"},{"id":262,"householdId":1,"name":"Azmira Chaitanya Nayak","relation":"Son","age":"9","gender":"Male","education":"Illiterate","category":"ST","occupation":"Student","bankAccountStatus":"No Bank Account","aadhaarNumber":"791340636455","healthProblems":"No","underTreatment":"No","mnregaJobCard":"No","contactNumber":"9652459967"},{"id":263,"householdId":1,"name":"Ajmeera Sony","relation":"Mother","age":"65","gender":"Female","education":"Illiterate","category":"ST","occupation":"House wife","bankAccountStatus":"Private Account","bankName":"State Bank of India (SBI)","aadhaarNumber":"300177217939","healthProblems":"No","underTreatment":"No","mnregaJobCard":"Yes","contactNumber":"9652459967"}]};
+
+// ─── File Loading ─────────────────────────────────────────────────────────────
+function loadSample(){
+  data = JSON.parse(JSON.stringify(SAMPLE));
+  originalData = JSON.parse(JSON.stringify(SAMPLE));
+  analyzeAndRender();
+}
+
+document.getElementById('file-input').addEventListener('change', e => {
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    try {
+      data = JSON.parse(ev.target.result);
+      originalData = JSON.parse(ev.target.result);
+      analyzeAndRender();
+    } catch(err){ alert('Invalid JSON file. Please check the format.'); }
+  };
+  r.readAsText(f);
+});
+
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.style.borderColor='#185FA5'; dz.style.background='#e6f1fb'; });
+dz.addEventListener('dragleave', () => { dz.style.borderColor=''; dz.style.background=''; });
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.style.borderColor=''; dz.style.background='';
+  const f = e.dataTransfer.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    try { data = JSON.parse(ev.target.result); originalData = JSON.parse(ev.target.result); analyzeAndRender(); }
+    catch(err){ alert('Invalid JSON file.'); }
+  };
+  r.readAsText(f);
+});
+
+// ─── Core ─────────────────────────────────────────────────────────────────────
+function analyzeAndRender(){
+  document.getElementById('upload-section').classList.add('hidden');
+  document.getElementById('main-section').classList.remove('hidden');
+  detectIssues();
+  renderStats();
+  renderIssues();
+  renderHouseholdTable();
+  renderMembersTable();
+}
+
+function loadNew(){
+  data = null; originalData = null; issues = [];
+  document.getElementById('upload-section').classList.remove('hidden');
+  document.getElementById('main-section').classList.add('hidden');
+  document.getElementById('file-input').value = '';
+  document.getElementById('preview-container').classList.add('hidden');
+}
+
+function saveAndRefresh(){ detectIssues(); renderStats(); renderIssues(); }
+
+// ─── Issue Detection ───────────────────────────────────────────────────────────
+function detectIssues(){
+  issues = [];
+  const h = data.household;
+
+  if(h.headName && h.headName !== toTitleCase(h.headName))
+    issues.push({type:'warn', field:'household › headName', msg:'Head name not in title case', fix:()=>{ data.household.headName = toTitleCase(data.household.headName); }});
+
+  if(h.mainIncomeSource && h.mainIncomeSource !== toTitleCase(h.mainIncomeSource))
+    issues.push({type:'warn', field:'household › mainIncomeSource', msg:'Income source not properly capitalized', fix:()=>{ data.household.mainIncomeSource = toTitleCase(data.household.mainIncomeSource); }});
+
+  if(h.surveyDate && typeof h.surveyDate === 'number' && h.surveyDate > 9999999999)
+    issues.push({type:'warn', field:'household › surveyDate', msg:'Survey date stored as milliseconds — convert to readable date', fix:()=>{ data.household.surveyDate = new Date(data.household.surveyDate).toISOString().split('T')[0]; }});
+
+  if(h.remarks && h.remarks.length > 0)
+    issues.push({type:'warn', field:'household › remarks', msg:'Remarks contain grammatical issues — review manually', fix:null});
+
+  data.members.forEach((m, i) => {
+    if(m.name && m.name !== toTitleCase(m.name))
+      issues.push({type:'warn', field:`member[${i}] › name`, msg:`"${m.name}" — name not in title case`, fix:()=>{ data.members[i].name = toTitleCase(data.members[i].name); }});
+
+    if(m.occupation && /operater/i.test(m.occupation))
+      issues.push({type:'err', field:`member[${i}] › occupation`, msg:`Spelling error: "operater" should be "operator"`, fix:()=>{ data.members[i].occupation = data.members[i].occupation.replace(/operater/gi,'operator'); }});
+
+    if(m.aadhaarNumber && m.aadhaarNumber.replace(/\s/g,'').length !== 12)
+      issues.push({type:'err', field:`member[${i}] › aadhaarNumber`, msg:`Aadhaar "${m.aadhaarNumber}" is not 12 digits`, fix:null});
+
+    if(m.education === 'Illiterate' && parseInt(m.age) >= 5 && parseInt(m.age) <= 18 && m.occupation === 'Student')
+      issues.push({type:'warn', field:`member[${i}] › education`, msg:`${m.name||'Member'} is a student but education is "Illiterate"`, fix:()=>{ data.members[i].education = 'Primary'; }});
+  });
+}
+
+function toTitleCase(s){
+  return String(s).replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.substr(1));
+}
+
+// ─── Render Stats ─────────────────────────────────────────────────────────────
+function renderStats(){
+  const errs  = issues.filter(i=>i.type==='err').length;
+  const warns = issues.filter(i=>i.type==='warn').length;
+  const fixable = issues.filter(i=>i.fix).length;
+  document.getElementById('stats-row').innerHTML = `
+    <div class="stat-card"><div class="val">${data.members.length}</div><div class="lbl">Family members</div></div>
+    <div class="stat-card"><div class="val" style="color:#a32d2d">${errs}</div><div class="lbl">Errors</div></div>
+    <div class="stat-card"><div class="val" style="color:#854f0b">${warns}</div><div class="lbl">Warnings</div></div>
+    <div class="stat-card"><div class="val" style="color:#3b6d11">${fixable}</div><div class="lbl">Auto-fixable</div></div>
+  `;
+}
+
+// ─── Render Issues ────────────────────────────────────────────────────────────
+function renderIssues(){
+  const box = document.getElementById('issues-list');
+  if(!issues.length){
+    box.innerHTML = '<div class="issue-row"><i class="ti ti-circle-check" style="color:#3b6d11"></i><span>No issues found — data looks clean!</span></div>';
+    return;
+  }
+  box.innerHTML = issues.map((iss, idx) => `
+    <div class="issue-row">
+      <i class="ti ti-${iss.type==='err'?'alert-circle':'alert-triangle'}" style="color:${iss.type==='err'?'#a32d2d':'#854f0b'}"></i>
+      <div style="flex:1;min-width:0">
+        <span>${iss.msg}</span>
+        <span style="display:block;font-size:11px;color:#888;margin-top:2px">${iss.field}</span>
+      </div>
+      <span class="badge badge-${iss.type==='err'?'err':'warn'}">${iss.type==='err'?'Error':'Warning'}</span>
+      ${iss.fix
+        ? `<button class="fix-btn" onclick="fixOne(${idx})"><i class="ti ti-wand" style="font-size:12px"></i> Fix</button>`
+        : '<span style="font-size:11px;color:#aaa">Manual</span>'}
+    </div>
+  `).join('');
+}
+
+function fixOne(idx){
+  issues[idx].fix();
+  detectIssues(); renderStats(); renderIssues(); renderHouseholdTable(); renderMembersTable();
+}
+
+function fixAll(){
+  issues.filter(i=>i.fix).forEach(i=>i.fix());
+  detectIssues(); renderStats(); renderIssues(); renderHouseholdTable(); renderMembersTable();
+}
+
+// ─── Household Table ───────────────────────────────────────────────────────────
+function renderHouseholdTable(){
+  const skip = ['id'];
+  const rows = Object.entries(data.household)
+    .filter(([k])=>!skip.includes(k))
+    .map(([k,v]) => {
+      const hasIss = issues.some(i=>i.field && i.field.includes('household') && i.field.includes(k));
+      return `<tr class="${hasIss?'row-warn':''}">
+        <td style="font-weight:500;color:#666;width:220px;min-width:160px">${formatKey(k)}</td>
+        <td><input type="text" value="${escHtml(String(v))}" onchange="data.household['${k}']=this.value"></td>
+      </tr>`;
+    }).join('');
+  document.getElementById('household-table').innerHTML =
+    `<thead><tr><th style="width:220px">Field</th><th>Value</th></tr></thead><tbody>${rows}</tbody>`;
+}
+
+function resetHousehold(){
+  data.household = JSON.parse(JSON.stringify(originalData.household));
+  renderHouseholdTable(); detectIssues(); renderStats(); renderIssues();
+}
+
+// ─── Members Table ────────────────────────────────────────────────────────────
+function renderMembersTable(){
+  const cols = ['name','relation','age','gender','education','category','occupation','bankAccountStatus','aadhaarNumber','healthProblems','mnregaJobCard'];
+  const headers = cols.map(c=>`<th>${formatKey(c)}</th>`).join('');
+  const rows = data.members.map((m,i)=>{
+    const hasIss = issues.some(iss=>iss.field && iss.field.includes(`member[${i}]`));
+    return `<tr class="${hasIss?'row-warn':''}">
+      <td style="width:36px"><input type="checkbox" class="member-cb" data-idx="${i}"></td>
+      ${cols.map(c=>`<td style="min-width:100px"><input type="text" value="${escHtml(String(m[c]||''))}" onchange="data.members[${i}]['${c}']=this.value"></td>`).join('')}
+    </tr>`;
+  }).join('');
+  document.getElementById('members-table').innerHTML =
+    `<thead><tr><th style="width:36px"></th>${headers}</tr></thead><tbody>${rows}</tbody>`;
+}
+
+function deleteSelected(){
+  const idxs = Array.from(document.querySelectorAll('.member-cb:checked'))
+    .map(c=>parseInt(c.dataset.idx)).sort((a,b)=>b-a);
+  if(!idxs.length){ alert('Select members to delete first.'); return; }
+  if(!confirm(`Delete ${idxs.length} member(s)?`)) return;
+  idxs.forEach(i=>data.members.splice(i,1));
+  renderMembersTable(); detectIssues(); renderStats(); renderIssues();
+}
+
+// ─── Tab Switcher ─────────────────────────────────────────────────────────────
+function switchTab(t){
+  ['issues','household','members','export'].forEach(id=>{
+    document.getElementById('tab-'+id).classList.toggle('hidden', id!==t);
+  });
+  document.querySelectorAll('.tab').forEach((el,i)=>{
+    el.classList.toggle('active', ['issues','household','members','export'][i]===t);
+  });
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function formatKey(k){ return k.replace(/([A-Z])/g,' $1').replace(/^./,s=>s.toUpperCase()).trim(); }
+function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ─── JSON Export ──────────────────────────────────────────────────────────────
+function exportJSON(){
+  const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'cleaned_household_data.json';
+  a.click();
+}
+
+// ─── Canvas / Image Export ────────────────────────────────────────────────────
+const THEMES = {
+  light:{ bg:'#ffffff', surface:'#f5f5f3', surface2:'#eeecea', border:'#d8d5ce', text:'#1a1a1a', muted:'#666', accent:'#185FA5', head:'#fff', rowAlt:'#fafaf8' },
+  dark: { bg:'#1c1c1a', surface:'#2a2a28', surface2:'#333330', border:'#444441', text:'#f0f0ee', muted:'#999', accent:'#378ADD', head:'#fff', rowAlt:'#222220' },
+  blue: { bg:'#042C53', surface:'#0C447C', surface2:'#185FA5', border:'#378ADD', text:'#E6F1FB', muted:'#85B7EB', accent:'#FAC775', head:'#fff', rowAlt:'#073564' },
+  green:{ bg:'#173404', surface:'#27500A', surface2:'#3B6D11', border:'#639922', text:'#EAF3DE', muted:'#97C459', accent:'#FAC775', head:'#fff', rowAlt:'#1e4206' },
+};
+
+function buildCanvas(){
+  const fs   = parseInt(document.getElementById('font-size-range').value);
+  const c    = THEMES[document.getElementById('theme-select').value];
+  const incH = document.getElementById('inc-household').checked;
+  const incM = document.getElementById('inc-members').checked;
+  const incS = document.getElementById('inc-summary').checked;
+  const incR = document.getElementById('inc-remarks').checked;
+  const h    = data.household;
+  const mems = data.members;
+
+  const W = 960, pad = 36;
+  const colW = (W - pad*2 - 20) / 2;
+
+  // --- pass 1: measure height ---
+  let y = 60; // header
+  if(incS) y += 90;
+  if(incH){
+    const fields = Object.entries(h).filter(([k])=>!['id'].includes(k) && !(k==='remarks'));
+    y += 44 + Math.ceil(fields.length/2)*38 + 20;
+  }
+  if(incM){
+    const memberCols = ['name','relation','age','gender','education','occupation','bankAccountStatus'];
+    y += 44 + (mems.length+1)*(fs+16) + 20;
+  }
+  if(incR && h.remarks) y += 70;
+  y += 56; // footer
+
+  // --- draw ---
+  const canvas = document.getElementById('preview-canvas');
+  canvas.width = W; canvas.height = y;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = c.bg; ctx.fillRect(0,0,W,y);
+
+  let cy = 0;
+
+  // Header
+  ctx.fillStyle = c.accent; ctx.fillRect(0,0,W,56);
+  ctx.fillStyle = c.head; ctx.font = '600 20px system-ui,sans-serif';
+  ctx.fillText('Household Survey Report', pad, 36);
+  ctx.font = '400 12px system-ui,sans-serif'; ctx.textAlign='right';
+  ctx.fillText('Generated: '+new Date().toLocaleDateString('en-IN'), W-pad, 36);
+  ctx.textAlign='left';
+  cy = 72;
+
+  // Summary stats
+  if(incS){
+    const stats = [
+      {l:'Head of Family', v:toTitleCase(h.headName||'')},
+      {l:'Family Members',  v:mems.length},
+      {l:'Annual Income',   v:'₹'+parseInt(h.annualIncome||0).toLocaleString('en-IN')},
+      {l:'Poverty Status',  v:(h.povertyStatus||'-').replace(/\(.*\)/,'').trim()},
+    ];
+    const sw = (W - pad*2 - 30) / 4;
+    stats.forEach((s,i)=>{
+      const x = pad + i*(sw+10);
+      ctx.fillStyle = c.surface; rr(ctx,x,cy,sw,64,8); ctx.fill();
+      ctx.fillStyle = c.muted;   ctx.font=`400 11px system-ui,sans-serif`; ctx.fillText(s.l,x+12,cy+20);
+      ctx.fillStyle = c.text;    ctx.font=`500 14px system-ui,sans-serif`; ctx.fillText(String(s.v).substring(0,24),x+12,cy+44);
+    });
+    cy += 80;
+  }
+
+  // Household info
+  if(incH){
+    secHead(ctx,'Household Information',pad,cy,W-pad*2,c); cy+=44;
+    const skip = ['id','remarks'];
+    const fields = Object.entries(h).filter(([k])=>!skip.includes(k));
+    let col=0;
+    fields.forEach(([k,v])=>{
+      const x = pad + col*(colW+20);
+      ctx.fillStyle = c.muted; ctx.font=`400 ${fs-1}px system-ui,sans-serif`; ctx.fillText(formatKey(k),x,cy);
+      ctx.fillStyle = c.text;  ctx.font=`400 ${fs}px system-ui,sans-serif`;   ctx.fillText(String(v).substring(0,44),x,cy+17);
+      ctx.strokeStyle=c.border; ctx.lineWidth=0.5;
+      ctx.beginPath(); ctx.moveTo(x,cy+22); ctx.lineTo(x+colW,cy+22); ctx.stroke();
+      col++; if(col===2){col=0;cy+=38;}
+    });
+    if(col===1) cy+=38;
+    cy+=20;
+  }
+
+  // Members
+  if(incM){
+    secHead(ctx,'Family Members',pad,cy,W-pad*2,c); cy+=44;
+    const mcols=['name','relation','age','gender','education','occupation','bankAccountStatus'];
+    const cw = (W-pad*2)/mcols.length;
+    // column headers
+    ctx.fillStyle=c.surface2; ctx.fillRect(pad,cy,W-pad*2,fs+16);
+    mcols.forEach((col2,i)=>{
+      ctx.fillStyle=c.muted; ctx.font=`500 ${fs-1}px system-ui,sans-serif`;
+      ctx.fillText(formatKey(col2),pad+i*cw+8,cy+fs+3);
+    });
+    cy+=fs+16;
+    // rows
+    mems.forEach((m,mi)=>{
+      ctx.fillStyle=mi%2===0?c.bg:c.rowAlt; ctx.fillRect(pad,cy,W-pad*2,fs+16);
+      mcols.forEach((col2,i)=>{
+        ctx.fillStyle=c.text; ctx.font=`400 ${fs}px system-ui,sans-serif`;
+        ctx.fillText(String(m[col2]||'-').substring(0,18),pad+i*cw+8,cy+fs+3);
+      });
+      // row border
+      ctx.strokeStyle=c.border; ctx.lineWidth=0.5;
+      ctx.beginPath(); ctx.moveTo(pad,cy+fs+16); ctx.lineTo(W-pad,cy+fs+16); ctx.stroke();
+      cy+=fs+16;
+    });
+    cy+=20;
+  }
+
+  // Remarks
+  if(incR && h.remarks){
+    ctx.fillStyle=c.surface; rr(ctx,pad,cy,W-pad*2,52,8); ctx.fill();
+    ctx.fillStyle=c.muted; ctx.font='500 11px system-ui,sans-serif'; ctx.fillText('Remarks:',pad+12,cy+18);
+    ctx.fillStyle=c.text;  ctx.font='400 11px system-ui,sans-serif';
+    const rem = String(h.remarks).substring(0,130)+(h.remarks.length>130?'…':'');
+    ctx.fillText(rem, pad+12, cy+36);
+    cy+=64;
+  }
+
+  // Footer
+  ctx.fillStyle=c.surface; ctx.fillRect(0,cy,W,56);
+  ctx.strokeStyle=c.border; ctx.lineWidth=0.5;
+  ctx.beginPath(); ctx.moveTo(0,cy); ctx.lineTo(W,cy); ctx.stroke();
+  ctx.fillStyle=c.muted; ctx.font='400 11px system-ui,sans-serif';
+  ctx.fillText(
+    `Surveyed by: ${h.surveyorName||'-'}   |   Survey ID: ${h.id||'-'}   |   Mobile: ${h.mobileNumber||'-'}   |   Issues fixed: ${issues.filter(i=>!i.fix).length} manual remaining`,
+    pad, cy+34
+  );
+
+  return canvas;
+}
+
+function secHead(ctx,title,x,y,w,c){
+  ctx.fillStyle=c.accent; ctx.fillRect(x,y,4,26);
+  ctx.fillStyle=c.text; ctx.font='600 14px system-ui,sans-serif'; ctx.fillText(title,x+14,y+18);
+  ctx.strokeStyle=c.border; ctx.lineWidth=0.5;
+  ctx.beginPath(); ctx.moveTo(x+14,y+26); ctx.lineTo(x+w,y+26); ctx.stroke();
+}
+
+function rr(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y);
+  ctx.quadraticCurveTo(x+w,y,x+w,y+r); ctx.lineTo(x+w,y+h-r);
+  ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h); ctx.lineTo(x+r,y+h);
+  ctx.quadraticCurveTo(x,y+h,x,y+h-r); ctx.lineTo(x,y+r);
+  ctx.quadraticCurveTo(x,y,x+r,y); ctx.closePath();
+}
+
+function previewImage(){
+  buildCanvas();
+  document.getElementById('preview-canvas').style.display='block';
+  document.getElementById('preview-container').classList.remove('hidden');
+}
+
+function exportImage(){
+  const canvas = buildCanvas();
+  const a = document.createElement('a');
+  a.href = canvas.toDataURL('image/png');
+  a.download = 'household_survey_report.png';
+  a.click();
+}
+</script>
+</body>
+</html>
